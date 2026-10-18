@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>应用集合</title>
+  <link rel="icon" href="/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="theme-aurora">
+  <div class="backdrop" aria-hidden="true">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="clock" id="clock">--:--</div>
+        <div class="date" id="date"></div>
+      </div>
+
+      <div class="search-wrap" id="searchWrap">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M16.5 16.5 21 21"></path>
+        </svg>
+        <input id="search" type="text" placeholder="搜索应用" autocomplete="off" spellcheck="false" aria-label="搜索应用">
+        <button class="search-clear" id="clearSearch" type="button" aria-label="清空搜索" hidden>×</button>
+      </div>
+
+      <div class="top-actions">
+        <button class="pill-btn" id="addBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          添加应用
+        </button>
+        <button class="round-btn" id="moreBtn" type="button" aria-label="更多">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="19" cy="12" r="1.7"></circle></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="screen" id="screen">
+      <div class="screen-head">
+        <div class="section-title" id="sectionTitle">全部应用</div>
+        <div class="section-meta" id="sectionMeta"></div>
+      </div>
+
+      <div class="grid" id="grid" role="list"></div>
+
+      <div class="empty" id="empty" hidden>
+        <div class="empty-icon">◎</div>
+        <div class="empty-title" id="emptyTitle">正在整理你的应用…</div>
+        <div class="empty-text" id="emptyText">第一次启动需要扫描开始菜单和桌面，请稍候。</div>
+      </div>
+
+      <div class="tip" id="tip">
+        <span class="tip-dot"></span>
+        拖到另一个应用中间可以合成文件夹 · 拖到两侧调整顺序 · 右键应用可以隐藏或移出
+      </div>
+    </main>
+  </div>
+
+  <div class="folder-overlay" id="folderOverlay" hidden>
+    <div class="folder-panel" id="folderPanel">
+      <div class="folder-panel-head">
+        <div class="folder-title-wrap">
+          <input class="folder-title" id="folderTitle" maxlength="24" spellcheck="false">
+          <div class="folder-subtitle" id="folderSubtitle"></div>
+        </div>
+        <div class="folder-panel-actions">
+          <button class="ghost-btn" id="folderDeleteBtn" type="button">解散文件夹</button>
+          <button class="round-btn small" id="folderCloseBtn" type="button" aria-label="关闭">×</button>
+        </div>
+      </div>
+      <div class="folder-grid" id="folderGrid"></div>
+      <div class="folder-hint">右键应用可以移出文件夹 · 拖动应用可调整位置</div>
+    </div>
+  </div>
+
+  <div class="menu" id="menu" hidden></div>
+
+  <div class="modal-layer" id="modalLayer" hidden>
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
