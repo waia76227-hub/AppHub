@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NoWarn>$(NoWarn);NU5128;NU5110</NoWarn>
+    <PayloadDir Condition="'$(PayloadDir)' == ''">..\AppHub-GitHub\dist\AppHub</PayloadDir>
+
+    <PackageId>AppHub</PackageId>
+    <Version Condition="'$(Version)' == ''">1.0.0</Version>
+    <Authors>waia76227-hub</Authors>
+    <Company>waia76227-hub</Company>
+    <Description>应用集合 AppHub —— 像手机桌面一样的 Windows 应用启动器。自带 Node 运行时，解压即用。</Description>
+    <PackageTags>windows;launcher;desktop;apphub;webview2</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/waia76227-hub/AppHub</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/waia76227-hub/AppHub</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(PayloadDir)/**/*" Pack="true" PackagePath="tools\app\" />
+    <None Include="install.ps1" Pack="true" PackagePath="tools\" />
+    <None Include="uninstall.ps1" Pack="true" PackagePath="tools\" />
+  </ItemGroup>
+
+</Project>
