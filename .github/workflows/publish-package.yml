@@ -1,0 +1,113 @@
+name: 发布软件包
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（留空则用 1.0.0）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  NODE_RUNTIME_VERSION: v24.22.1
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
+jobs:
+  package:
+    name: 编译并发布
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: AppHub-GitHub
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 计算版本号
+        id: ver
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          if (-not $version -and "${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}" -replace '^v', ''
+          }
+          if (-not $version) { $version = '1.0.0' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version" >> $env:GITHUB_OUTPUT
+
+      - name: 下载内置 Node 运行时
+        shell: pwsh
+        run: |
+          $ver = $env:NODE_RUNTIME_VERSION
+          Invoke-WebRequest "https://nodejs.org/dist/$ver/node-$ver-win-x64.zip" -OutFile node.zip
+          Expand-Archive node.zip -DestinationPath node-runtime
+          New-Item -ItemType Directory -Force runtime | Out-Null
+          Copy-Item "node-runtime\node-$ver-win-x64\node.exe" runtime\node.exe
+          Copy-Item "node-runtime\node-$ver-win-x64\LICENSE" runtime\LICENSE-node.txt
+
+      - name: 编译 AppHub.exe
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File desktop\build.ps1
+
+      - name: 组装发行目录
+        shell: pwsh
+        run: |
+          $dist = "dist\AppHub"
+          New-Item -ItemType Directory -Force $dist | Out-Null
+          Copy-Item AppHub.exe, Microsoft.Web.WebView2.Core.dll, Microsoft.Web.WebView2.WinForms.dll, WebView2Loader.dll -Destination $dist
+          foreach ($item in 'assets', 'server', 'runtime') {
+            Copy-Item $item -Destination $dist -Recurse
+          }
+          foreach ($item in '使用说明.txt', 'LICENSE', 'README.md') {
+            if (Test-Path $item) { Copy-Item $item -Destination $dist }
+          }
+          Copy-Item ..\packaging\install.ps1, ..\packaging\uninstall.ps1 -Destination $dist
+          Get-ChildItem -Recurse $dist | Measure-Object -Property Length -Sum | ForEach-Object { "发行目录大小：{0:N1} MB" -f ($_.Sum / 1MB) }
+
+      - name: 生成 NuGet 包
+        shell: pwsh
+        run: |
+          $payload = Join-Path $PWD 'dist\AppHub'
+          dotnet pack ..\packaging\AppHub.Package.csproj `
+            -c Release `
+            -o out `
+            -p:Version=${{ steps.ver.outputs.version }} `
+            "-p:PayloadDir=$payload"
+          Get-ChildItem out
+
+      - name: 推送到 GitHub Packages
+        shell: pwsh
+        run: |
+          $nupkg = Get-ChildItem out\AppHub.*.nupkg | Select-Object -First 1
+          dotnet nuget push $nupkg.FullName `
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            --api-key ${{ secrets.GITHUB_TOKEN }} `
+            --skip-duplicate
+
+      - name: 生成便携 zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist\AppHub -DestinationPath "out\AppHub-${{ steps.ver.outputs.version }}-win-x64.zip" -CompressionLevel Optimal
+          Get-ChildItem out\*.zip | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+
+      - name: 发布 Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.ver.outputs.tag }}"
+          $zip = "out\AppHub-${{ steps.ver.outputs.version }}-win-x64.zip"
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $zip --clobber
+          } else {
+            gh release create $tag $zip --title "应用集合 AppHub ${{ steps.ver.outputs.version }}" --notes "内含 Node 运行时的完整安装包，解压后运行 install.ps1 即可。"
+          }
